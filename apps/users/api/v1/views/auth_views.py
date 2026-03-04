@@ -5,7 +5,7 @@ from apps.users.services.auth_service import AuthService
 from apps.users.api.v1.serializers.serializers import (
     UserRegistrationSerializer,
     EmailOtpVerificationSerializer,
-    UserLoginSerializer,
+    UserLoginSerializer,forgot_password_confirm_Serializer
 )
 
 service = AuthService()
@@ -50,3 +50,9 @@ def logout_view(request):
 @permission_classes([AllowAny])
 def token_refresh_view(request):
     return service.refresh(request)
+ 
+@extend_schema(request=forgot_password_confirm_Serializer)
+@api_view(['PATCH'])
+@permission_classes([AllowAny])
+def reset_password_view(request):
+    return service.reset_password(request)
