@@ -226,5 +226,15 @@ DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@fittech.com')
 
 
 
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 
+# Email Configuration
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT'))        # cast to int
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') == 'True'  # cast to bool
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
