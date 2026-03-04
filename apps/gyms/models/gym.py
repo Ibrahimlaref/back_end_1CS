@@ -22,7 +22,7 @@ class Gym(models.Model):
 
     def __str__(self):
         return self.name
-
+    
 
 class PlatformOwnership(models.Model):
     id         = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -62,6 +62,14 @@ class AuditLog(models.Model):
     class Meta:
         db_table = "audit_logs"
 
+    def save(self,*args,**kwargs):
+        if self.pk:
+            raise PermissionError("AuditLog is append-only")
+        super().save(*args,**kwargs)
+
+    def delete(self,*args,**kwargs):
+        raise PermissionError("AuditLog records cant be deleted")
+
 
 class AccessLog(models.Model):
     class EntryType(models.TextChoices):
@@ -83,6 +91,7 @@ class AccessLog(models.Model):
 
     class Meta:
         db_table = "access_logs"
+        managed=False
 
 
 class ErrorLog(models.Model):
