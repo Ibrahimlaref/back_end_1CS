@@ -228,13 +228,3 @@ DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@fittech.com')
 
 
 
-
-
-#the smtp config 
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'           # SMTP server
-EMAIL_PORT = 587                        # 587 for TLS
-EMAIL_USE_TLS = True                    # Use TLS encryption
-EMAIL_HOST_USER = 'ibrahimlaref23@gmail.com'
-EMAIL_HOST_PASSWORD = 'ptuv mhqs iuot znhc'  # ⚠️ Use App Password, not your Gmail password
