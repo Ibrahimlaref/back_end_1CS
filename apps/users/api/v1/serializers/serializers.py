@@ -58,14 +58,14 @@ class EmailOtpVerificationSerializer(serializers.Serializer):
 class ResendOtpSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
-    def validate_email(self, value):
+    """def validate_email(self, value):
         value = value.lower().strip()
         user = User.objects.filter(email=value).first()
         if not user:
             raise serializers.ValidationError("No account found with this email.")
         if user.email_verified:
             raise serializers.ValidationError("This email is already verified.")
-        return value
+        return value"""
 
 
 class UserLoginSerializer(serializers.Serializer):
@@ -178,3 +178,18 @@ class PasswordChangeSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError("Current password is incorrect.")
         return value
+
+class forgot_password_confirm_Serializer(serializers.Serializer):
+    email = serializers.EmailField()
+    new_password = serializers.CharField(min_length=8, write_only=True)
+    new_password_confirm = serializers.CharField(write_only=True)
+    otp= serializers.CharField(min_length=6, max_length=6)
+
+    def validate_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError({'new_password_confirm': 'Passwords do not match.'})
+        return attrs
