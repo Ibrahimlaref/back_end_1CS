@@ -1,6 +1,7 @@
 from django.urls import path
 from apps.users.api.v1.views.auth_views import (
     register_view,
+    reset_password_view,
     verify_otp_view,
     resend_otp_view,
     login_view,
@@ -24,6 +25,7 @@ urlpatterns = [
     path('auth/resend-otp/', resend_otp_view,     name='resend-otp'),
     path('auth/login/',      login_view,          name='login'),
     path('auth/refresh/',    token_refresh_view,  name='token-refresh'),
+    path('auth/reset-password/', reset_password_view, name='reset-password'),
 
     # Protected — token required
     path('auth/logout/',     logout_view,         name='logout'),

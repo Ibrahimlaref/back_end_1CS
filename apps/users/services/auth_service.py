@@ -11,6 +11,7 @@ from apps.users.api.v1.serializers.serializers import (
     EmailOtpVerificationSerializer,
     ResendOtpSerializer,
     UserLoginSerializer,
+    forgot_password_confirm_Serializer
 )
 from apps.users.services.jwt_service import (
     generate_tokens,
@@ -50,7 +51,7 @@ class AuthService:
             # Not verified — update their info and resend OTP
             existing_user.first_name = serializer.validated_data.get('first_name', existing_user.first_name)
             existing_user.last_name  = serializer.validated_data.get('last_name',  existing_user.last_name)
-            existing_user.phone      = serializer.validated_data.get('phone',      existing_user.phone)
+            """existing_user.phone      = serializer.validated_data.get('phone',      existing_user.phone)"""
             existing_user.set_password(password)
             existing_user.save()
             self._send_otp(existing_user, purpose='registration')
@@ -65,7 +66,7 @@ class AuthService:
             password=password,
             first_name=serializer.validated_data.get('first_name', ''),
             last_name=serializer.validated_data.get('last_name', ''),
-            phone=serializer.validated_data.get('phone', ''),
+            
         )
         self._send_otp(user, purpose='registration')
 
@@ -333,6 +334,55 @@ class AuthService:
             },
             status=status.HTTP_200_OK
         )
+    # ── reset password ────────────────────────────────────────────────────────────────────────────
+    def reset_password(self, request):
+        # This method would handle password reset logic, including:
+        # 1. Verifying the OTP for password reset
+        # 2. Allowing the user to set a new password
+        # 3. Revoking all existing sessions after password change
+        serializer = forgot_password_confirm_Serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {'errors': serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        email    = serializer.validated_data['email']
+        
+        
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response(
+                {'error': 'No account found with this email.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        otp_code = serializer.validated_data['otp']
+        new_password = serializer.validated_data['new_password']
+        if not otp_code or not new_password:
+            return Response(
+                {'error': 'OTP and new password are required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            EmailOtpVerification.verify(
+                user,
+                otp_code,
+                purpose='password_reset',
+            )
+        except ValueError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user.set_password(new_password)
+        user.save()
+        revoke_all_sessions(user)
+        return Response(
+            {'message': 'Password reset successful. Please log in with your new password.'},
+            status=status.HTTP_200_OK
+        )
+    
+
 
     # ── PRIVATE HELPERS ───────────────────────────────────────────────────────
 
@@ -345,3 +395,6 @@ class AuthService:
             subject='Your verification code',
             message=f'Your OTP is: {otp_obj.otp}\nExpires in 10 minutes.',
         )
+
+
+    
