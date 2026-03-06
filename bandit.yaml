@@ -1,0 +1,8 @@
+exclude_dirs:
+  - .venv
+  - .venv-1
+  - apps/core/migrations
+  - apps/users/migrations
+  - apps/gyms/migrations
+skips:
+  - B101

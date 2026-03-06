@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  quality-and-test:
+    name: Lint, Type, Security, Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: fittech_ci
+          POSTGRES_USER: fittech
+          POSTGRES_PASSWORD: fittech
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fittech -d fittech_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://fittech:fittech@localhost:5432/fittech_ci
+      DJANGO_SETTINGS_MODULE: brahim.settings.base
+      JWT_SECRET_KEY: ci-secret-key
+      REDIS_URL: redis://localhost:6379/0
+      PYTHONUNBUFFERED: "1"
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: requirements/dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/dev.txt
+
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Apply migrations
+        run: python manage.py migrate --noinput
+
+      - name: Track schema version snapshot
+        run: |
+          python manage.py track_schema_version \
+            --environment=ci \
+            --git-sha="${{ github.sha }}" \
+            --version-label="pr-${{ github.event.number }}"
+
+      - name: Check migration backward compatibility
+        run: |
+          if python manage.py help lintmigrations --settings=brahim.settings.dev > /dev/null 2>&1; then
+            python manage.py lintmigrations --settings=brahim.settings.dev --warnings-as-errors
+          else
+            lintmigrations --settings=brahim.settings.dev --warnings-as-errors
+          fi
+
+      - name: Enforce migration governance
+        run: python scripts/check_migration_governance.py --base-ref "${{ github.base_ref }}"
+
+      - name: Enforce migration squash policy
+        run: python scripts/check_migration_squash_policy.py --max-per-app 50
+
+      - name: Lint (flake8)
+        run: |
+          flake8 \
+            apps/core/middleware/request_logging.py \
+            apps/core/services \
+            apps/core/tests \
+            apps/users/services/session_cleanup_service.py \
+            apps/users/tasks.py \
+            apps/users/tests
+
+      - name: Type check (mypy)
+        run: |
+          mypy \
+            apps/core/services/observability.py \
+            apps/core/services/request_metrics.py \
+            apps/users/services/session_cleanup_service.py \
+            apps/users/tasks.py
+
+      - name: Security scan (bandit)
+        run: |
+          bandit -c bandit.yaml -r \
+            apps/core/services \
+            apps/users/services/session_cleanup_service.py \
+            apps/users/tasks.py \
+            -lll
+
+      - name: Tests with coverage (pytest)
+        run: |
+          pytest \
+            --cov=apps.core.middleware.request_logging \
+            --cov=apps.core.services \
+            --cov=apps.users.services.session_cleanup_service \
+            --cov=apps.users.tasks \
+            --cov-report=term-missing \
+            --cov-fail-under=80

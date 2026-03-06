@@ -4,5 +4,11 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .venv/
+.venv-1/
 .git/
 *.log
+.env
+.env.*
+*.pem
+*.key
+*.crt

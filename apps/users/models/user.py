@@ -159,6 +159,9 @@ class SessionLog(models.Model):
 
     class Meta:
         db_table = "session_logs"
+        indexes = [
+            models.Index(fields=["user", "is_revoked"], name="sessionlog_user_revoked_idx"),
+        ]
 
 class Warning(models.Model):
     class Type(models.TextChoices):
