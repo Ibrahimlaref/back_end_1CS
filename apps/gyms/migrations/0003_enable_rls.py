@@ -27,15 +27,17 @@ DECLARE
 BEGIN
     FOREACH tbl IN ARRAY gym_tables
     LOOP
-        EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY;', tbl);
-        EXECUTE format('DROP POLICY IF EXISTS gym_isolation ON %I;', tbl);
-        EXECUTE format($policy$
-            CREATE POLICY gym_isolation ON %I
-            USING (
-                current_setting('app.is_super_admin', true) = 'true'
-                OR gym_id = current_setting('app.current_gym_id')::uuid
-            );
-        $policy$, tbl);
+        IF to_regclass(tbl) IS NOT NULL THEN
+            EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY;', tbl);
+            EXECUTE format('DROP POLICY IF EXISTS gym_isolation ON %I;', tbl);
+            EXECUTE format($policy$
+                CREATE POLICY gym_isolation ON %I
+                USING (
+                    current_setting('app.is_super_admin', true) = 'true'
+                    OR gym_id = current_setting('app.current_gym_id')::uuid
+                );
+            $policy$, tbl);
+        END IF;
     END LOOP;
 END
 $$;
@@ -44,7 +46,7 @@ $$;
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '00XX_previous_migration'),
+        ('core', '0002_initial'),
     ]
 
     operations = [
