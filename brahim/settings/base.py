@@ -195,6 +195,15 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'apps.analytics.tasks.refresh_retention_signals',
         'schedule': crontab(hour=3, minute=0),
     },
+    # Recalculate retention risk signals — nightly 03:00
+    'refresh_retention_signals': {
+        'task': 'brahim.celery.calculate_churn_scores',
+        'schedule': crontab(hour=3, minute=0),
+    },
+    'process-behavior-events-every-minute': {
+    'task': 'apps.membersNsubscription.services.MemberBehaviorEvent',
+    'schedule': crontab(minute='*'),   # every minute
+    },
 }
 
 # ─── EMAIL ────────────────────────────────────────────────────────────────────

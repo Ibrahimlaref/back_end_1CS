@@ -20,6 +20,10 @@ from apps.membersNsubscription.api.v1.views.products import (
     ProductDetailView,
 )
 
+from apps.membersNsubscription.api.v1.views.AccessLog import(
+    GymScanView
+)
+
 urlpatterns = [
 
     # ── US-023 — Join Gym ───────────────────────────────────────────────────
@@ -59,4 +63,6 @@ urlpatterns = [
          ProductListCreateView.as_view(), name="products-list"),
     path("gyms/<uuid:gym_id>/products/<uuid:product_id>/",
          ProductDetailView.as_view(), name="product-detail"),
+     path("scan/"
+          , GymScanView.as_view(), name="gym-scan"),
 ]

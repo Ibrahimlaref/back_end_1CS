@@ -22,19 +22,3 @@ class BehaviorEventService:
         redis_client.rpush(cls,EVENT_LIST_KEY,json.dumps(event))
 
 
-#the view function
-
-def course_detail(request,course_id):
-    course=get_object_or_404(course,id=course_id)
-
-    BehaviorEventService.track(
-        gym=course.gym,
-        user=course.user,
-        event_type='course_viewed',
-        entity_type='course',
-        entity_id=course.id,
-        metadata={'title':course.title}
-    )
-
-
-    return render(request,'course_detail.html',{'course':course})
