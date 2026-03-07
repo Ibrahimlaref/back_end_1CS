@@ -8,10 +8,17 @@ from apps.users.api.v1.serializers.serializers import (
     ResendOtpSerializer,
     UserLoginSerializer,
     ForgotPasswordConfirmSerializer,
+    UserLoginSerializer,forgot_password_confirm_Serializer,
+    UserLoginSerializer,
+    TOTPVerifySerializer,
+    TOTPSetupConfirmSerializer,
+    TOTPRecoverSerializer,
 )
 
 service = AuthService()
 
+
+# ─── STANDARD AUTH ────────────────────────────────────────────────────────────
 
 @extend_schema(request=UserRegistrationSerializer)
 @api_view(['POST'])
@@ -58,3 +65,45 @@ def token_refresh_view(request):
 @permission_classes([AllowAny])
 def reset_password_view(request):
     return service.reset_password(request)
+
+
+# ─── 2FA VIEWS ────────────────────────────────────────────────────────────────
+
+@extend_schema(request=TOTPVerifySerializer)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_2fa_view(request):
+    """Step 2 of login when 2FA is enabled. Submit 6-digit TOTP code."""
+    return service.verify_2fa(request)
+
+
+@extend_schema(request=None)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def setup_2fa_view(request):
+    """Get QR code and secret to set up 2FA in an authenticator app."""
+    return service.setup_2fa(request)
+
+
+@extend_schema(request=TOTPSetupConfirmSerializer)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def confirm_2fa_view(request):
+    """Confirm 2FA setup by submitting the first TOTP code. Returns backup codes."""
+    return service.confirm_2fa_setup(request)
+
+
+@extend_schema(request=TOTPSetupConfirmSerializer)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def disable_2fa_view(request):
+    """Disable 2FA by submitting current TOTP code."""
+    return service.disable_2fa_view(request)
+
+
+@extend_schema(request=TOTPRecoverSerializer)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def recover_2fa_view(request):
+    """Login using a backup code when TOTP device is unavailable. Revokes all sessions."""
+    return service.recover_2fa(request)

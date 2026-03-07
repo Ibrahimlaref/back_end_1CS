@@ -9,22 +9,13 @@ User = get_user_model()
 # ─── AUTH SERIALIZERS ─────────────────────────────────────────────────────────
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    # Disable model-level unique validator so AuthService can handle
-    # verified vs unverified re-registration logic.
-    email = serializers.EmailField(validators=[])
-    password = serializers.CharField(write_only=True, min_length=8)
+    email            = serializers.EmailField(validators=[])
+    password         = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
 
     class Meta:
-        model = User
-        fields = [
-            'email',
-            'password',
-            'password_confirm',
-            'first_name',
-            'last_name',
-            'phone',
-        ]
+        model  = User
+        fields = ['email', 'password', 'password_confirm', 'first_name', 'last_name', 'phone']
 
     def validate_email(self, value):
         return value.lower().strip()
@@ -44,7 +35,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class EmailOtpVerificationSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    otp = serializers.CharField(min_length=6, max_length=6)
+    otp   = serializers.CharField(min_length=6, max_length=6)
 
     def validate_email(self, value):
         return value.lower().strip()
@@ -60,7 +51,7 @@ class ResendOtpSerializer(serializers.Serializer):
 
     """def validate_email(self, value):
         value = value.lower().strip()
-        user = User.objects.filter(email=value).first()
+        user  = User.objects.filter(email=value).first()
         if not user:
             raise serializers.ValidationError("No account found with this email.")
         if user.email_verified:
@@ -69,7 +60,7 @@ class ResendOtpSerializer(serializers.Serializer):
 
 
 class UserLoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email    = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
     def validate_email(self, value):
@@ -81,7 +72,7 @@ class TokenRefreshSerializer(serializers.Serializer):
 
 
 class LogoutSerializer(serializers.Serializer):
-    refresh = serializers.CharField()
+    refresh     = serializers.CharField()
     all_devices = serializers.BooleanField(default=False)
 
 
@@ -93,8 +84,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    token = serializers.CharField()
-    password = serializers.CharField(min_length=8, write_only=True)
+    token            = serializers.CharField()
+    password         = serializers.CharField(min_length=8, write_only=True)
     password_confirm = serializers.CharField(write_only=True)
 
     def validate_password(self, value):
@@ -107,48 +98,62 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return attrs
 
 
+# ─── 2FA SERIALIZERS ──────────────────────────────────────────────────────────
+
+class TOTPVerifySerializer(serializers.Serializer):
+    """Used during login to submit the 6-digit TOTP code."""
+    user_id = serializers.UUIDField()
+    code    = serializers.CharField(min_length=6, max_length=6)
+
+    def validate_code(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError("Code must be 6 digits.")
+        return value
+
+
+class TOTPSetupConfirmSerializer(serializers.Serializer):
+    """Used to confirm 2FA setup or disable 2FA — requires current TOTP code."""
+    code = serializers.CharField(min_length=6, max_length=6)
+
+    def validate_code(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError("Code must be 6 digits.")
+        return value
+
+
+class TOTPRecoverSerializer(serializers.Serializer):
+    """Used during login to recover access via a backup code."""
+    user_id     = serializers.UUIDField()
+    backup_code = serializers.CharField()
+
+    def validate_backup_code(self, value):
+        return value.strip().upper()
+
+
 # ─── PROFILE SERIALIZERS ──────────────────────────────────────────────────────
 
 class UserSerializer(serializers.ModelSerializer):
-    """Minimal user representation — safe to embed in other serializers."""
-
     class Meta:
-        model = User
-        fields = ['id', 'email', 'first_name', 'last_name']
+        model       = User
+        fields      = ['id', 'email', 'first_name', 'last_name']
         read_only_fields = fields
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    """Full read-only profile — returned after login or on /me endpoint."""
-
     class Meta:
-        model = User
+        model  = User
         fields = [
-            'id',
-            'email',
-            'first_name',
-            'last_name',
-            'phone',
-            'date_of_birth',
-            'photo_url',
-            'email_verified',
-            'created_at',
+            'id', 'email', 'first_name', 'last_name',
+            'phone', 'date_of_birth', 'photo_url',
+            'email_verified', 'totp_enabled', 'created_at',
         ]
         read_only_fields = fields
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    """Partial update — user can change their own profile info."""
-
     class Meta:
-        model = User
-        fields = [
-            'first_name',
-            'last_name',
-            'phone',
-            'date_of_birth',
-            'photo_url',
-        ]
+        model  = User
+        fields = ['first_name', 'last_name', 'phone', 'date_of_birth', 'photo_url']
 
     def validate_phone(self, value):
         if value and not re.match(r'^\+?[\d\s\-]{7,20}$', value):
@@ -157,9 +162,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class PasswordChangeSerializer(serializers.Serializer):
-    """Authenticated user changing their own password."""
-    current_password = serializers.CharField(write_only=True)
-    new_password = serializers.CharField(min_length=8, write_only=True)
+    current_password     = serializers.CharField(write_only=True)
+    new_password         = serializers.CharField(min_length=8, write_only=True)
     new_password_confirm = serializers.CharField(write_only=True)
 
     def validate_new_password(self, value):
@@ -168,15 +172,14 @@ class PasswordChangeSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs['new_password'] != attrs['new_password_confirm']:
-            raise serializers.ValidationError(
-                {'new_password_confirm': 'New passwords do not match.'}
-            )
+            raise serializers.ValidationError({'new_password_confirm': 'New passwords do not match.'})
         return attrs
 
     def validate_current_password(self, value):
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError("Current password is incorrect.")
+<<<<<<< HEAD
         return value
 
 class ForgotPasswordConfirmSerializer(serializers.Serializer):
@@ -193,3 +196,6 @@ class ForgotPasswordConfirmSerializer(serializers.Serializer):
         if attrs['new_password'] != attrs['new_password_confirm']:
             raise serializers.ValidationError({'new_password_confirm': 'Passwords do not match.'})
         return attrs
+=======
+        return value
+>>>>>>> e8e0f09 (feat:add 2 factor authentication)

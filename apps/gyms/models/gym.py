@@ -17,6 +17,12 @@ class Gym(models.Model):
     is_active  = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # ─── 2FA POLICY ───────────────────────────────────────────────────────────
+    require_2fa = models.BooleanField(
+        default=False,
+        help_text="Force all staff (coaches and admins) to enable 2FA."
+    )
+
     class Meta:
         db_table = "gyms"
 
@@ -73,13 +79,13 @@ class AccessLog(models.Model):
         QR     = "qr",     "QR"
         MANUAL = "manual", "Manual"
 
-    id         = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    gym        = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name="access_logs")
-    user       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="access_logs")
-    entry_type = models.CharField(max_length=10, choices=EntryType.choices)
-    method     = models.CharField(max_length=10, choices=Method.choices)
-    device_id  = models.TextField(blank=True)
-    accessed_at= models.DateTimeField(auto_now_add=True)
+    id          = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    gym         = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name="access_logs")
+    user        = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="access_logs")
+    entry_type  = models.CharField(max_length=10, choices=EntryType.choices)
+    method      = models.CharField(max_length=10, choices=Method.choices)
+    device_id   = models.TextField(blank=True)
+    accessed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "access_logs"

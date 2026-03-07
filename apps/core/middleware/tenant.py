@@ -7,7 +7,12 @@ EXEMPT_PATHS = (
     '/api/users/v1/auth/resend-otp/',
     '/api/users/v1/auth/login/',
     '/api/users/v1/auth/refresh/',
+<<<<<<< HEAD
     '/api/users/v1/auth/reset-password/',
+=======
+    '/api/users/v1/auth/2fa/verify/',
+    '/api/users/v1/auth/2fa/recover/',
+>>>>>>> 51dcb10 (feat:add 2 factor authentication)
     '/health',
     '/admin/',
     '/api/schema/',
