@@ -2,8 +2,8 @@ import logging
 from django.db import transaction
 from django.db import connection
 
-from gyms.models.gym import Gym, PlatformOwnership, AuditLog
-from gyms.tasks import dispatch_welcome_email
+from apps.core.models.gym import Gym, PlatformOwnership, AuditLog
+from apps.gyms.tasks import dispatch_welcome_email
 
 logger = logging.getLogger(__name__)
 

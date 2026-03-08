@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
     bind=True,
     max_retries=3,
     default_retry_delay=60,   # retry after 60s
-    name="core.tasks.dispatch_welcome_email",
+    name="apps.gyms.tasks.dispatch_welcome_email",
 )
 def dispatch_welcome_email(
     self,

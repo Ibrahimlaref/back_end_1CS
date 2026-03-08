@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.membersNsubscription.models.membership_plan import MembershipPlan
+from apps.membersNsubscription.models import MembershipPlan
 
 
 class MembershipPlanSerializer(serializers.ModelSerializer):
@@ -10,7 +10,7 @@ class MembershipPlanSerializer(serializers.ModelSerializer):
     - duration_days >= 1  |  price >= 0  |  currency = 3-char ISO
     """
     from rest_framework import serializers
-from apps.membersNsubscription.models.membership_plan import MembershipPlan
+from apps.membersNsubscription.models import MembershipPlan
 
 
 # ── Read serializer ───────────────────────────────────────────────────────────

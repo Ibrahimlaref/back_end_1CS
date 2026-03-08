@@ -4,8 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.membersNsubscription.models.gym import Gym
-from apps.membersNsubscription.models.membership_plan import MembershipPlan
+from apps.membersNsubscription.models import Gym, MembershipPlan
 from apps.membersNsubscription.api.v1.serializers.plans import MembershipPlanSerializer
 from apps.membersNsubscription.api.v1.permissions import IsGymAdmin, IsActiveMember
 

@@ -14,8 +14,13 @@ from .locks import redis_task_lock
 
 User = get_user_model()
 
-if not firebase_admin._apps:
-    cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
+def _ensure_firebase_initialized():
+    if firebase_admin._apps:
+        return
+    credentials_path = getattr(settings, "FIREBASE_CREDENTIALS_PATH", "")
+    if not credentials_path:
+        raise RuntimeError("FIREBASE_CREDENTIALS_PATH is not configured")
+    cred = credentials.Certificate(credentials_path)
     firebase_admin.initialize_app(cred)
 
 
@@ -101,6 +106,7 @@ def send_push_notification(self, notification_id: str, user_id: str):
             return  # duplicate task, exit safely
 
         try:
+            _ensure_firebase_initialized()
             notif = Notification.objects.get(id=notification_id)
             devices = UserDevice.objects.filter(user_id=user_id)
 

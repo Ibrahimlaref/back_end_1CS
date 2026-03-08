@@ -5,9 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.membersNsubscription.models.gym import Gym
-from apps.membersNsubscription.models import UserGymRole
-from apps.membersNsubscription.models.member_profile import MemberProfile
+from apps.membersNsubscription.models import Gym, UserGymRole, MemberProfile
 from apps.membersNsubscription.api.v1.serializers.membership import (
     JoinGymSerializer,
     UserGymRoleSerializer,

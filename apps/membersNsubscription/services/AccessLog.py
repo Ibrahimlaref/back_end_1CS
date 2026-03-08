@@ -1,20 +1,26 @@
 from django.utils import timezone
-from apps.membersNsubscription.models.models import (AccessLog,UserGymRole,Subscription,Notification,MemberRetentionSignal)
+from apps.core.models import AccessLog
+from apps.membersNsubscription.models import (
+    MemberRetentionSignal,
+    Notification,
+    Subscription,
+    UserGymRole,
+)
 
 def handle_gym_scan(gym,user,entry_type,method,device_id=""):
 #check if memeber is suspended
     role=UserGymRole.objects.filter(
         gym=gym,
         user=user,
-        role=UserGymRole.Role.MEMBER
+        role="member",
     ).first()
 
-    if not role or role.status ==UserGymRole.Status.SUSPENDED:
+    if not role or role.status == "suspended":
         #notify all admins of the gym
         admins=UserGymRole.objects.filter(
             gym=gym,
-            role=UserGymRole.Role.ADMIN,
-            status=UserGymRole.Status.ACTIVE
+            role="admin",
+            status="active",
         )
         for admin in admins:
             Notification.objects.create(

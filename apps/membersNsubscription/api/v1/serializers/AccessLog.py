@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from apps.membersNsubscription.models import AccessLog
 
 class AccessScanSerializer(serializers.Serializer):
     gym_id = serializers.UUIDField()

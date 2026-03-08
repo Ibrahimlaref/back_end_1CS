@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.membersNsubscription.models.equipment import Equipment, MaintenanceReport
+from apps.membersNsubscription.models import Equipment, MaintenanceReport
 
 
 class EquipmentSerializer(serializers.ModelSerializer):

@@ -21,14 +21,14 @@ class UserGymRole(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     gym = models.ForeignKey(
-       "membersandsubscriptions.Gym",
+        "membersNsubscription.Gym",
         on_delete=models.CASCADE,
-        related_name="user_roles",
+        related_name="member_user_roles",
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="gym_roles",
+        related_name="members_gym_roles",
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="member")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="active")

@@ -8,6 +8,7 @@ EXEMPT_PATHS = (
     '/api/users/v1/auth/resend-otp/',
     '/api/users/v1/auth/login/',
     '/api/users/v1/auth/refresh/',
+    '/api/users/v1/auth/reset-password/',
     '/health',
     '/admin/',
     '/api/schema/',

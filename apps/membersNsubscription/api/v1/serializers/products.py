@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.membersNsubscription.models.product import Product
+from apps.membersNsubscription.models import Product
 
 
 class ProductSerializer(serializers.ModelSerializer):
