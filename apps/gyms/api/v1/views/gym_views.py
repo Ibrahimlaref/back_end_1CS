@@ -4,11 +4,15 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.api.v1.serializers.gym_serializers import (
+from apps.gyms.api.v1.serializers.serializers import (
     GymProvisionSerializer,
     GymProvisionResponseSerializer,
 )
-from core.services.gym_service import provision_gym, GymProvisioningError, RLSVerificationError
+from apps.gyms.services.gym_service import (
+    provision_gym,
+    GymProvisioningError,
+    RLSVerificationError,
+)
 
 logger = logging.getLogger(__name__)
 

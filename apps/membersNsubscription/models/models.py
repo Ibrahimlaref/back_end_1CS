@@ -3,6 +3,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.contrib.postgres.fields import ArrayField
 from django.utils import timezone   
+from .gym import Gym
+from apps.users.models.user import User, CoachProfile
 # ─── SUBSCRIPTIONS ────────────────────────────────────────────────────────────
 
 class MembershipPlan(models.Model):
@@ -229,14 +231,14 @@ class Warning(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     gym = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name="warnings")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="warnings")
-    issued_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="issued_warnings")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="members_warnings")
+    issued_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="members_issued_warnings")
     reason = models.TextField()
     type = models.CharField(max_length=20, choices=Type.choices)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "warnings"
+        db_table = "members_warnings"
 
     def __str__(self):
         return f"Warning: {self.user} ({self.type})"
@@ -307,7 +309,7 @@ class Notification(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     gym = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name="notifications")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="members_notifications")
     type = models.CharField(max_length=30, choices=Type.choices)
     title = models.TextField()
     message = models.TextField()
@@ -316,7 +318,7 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "notifications"
+        db_table = "members_notifications"
 
 
 class Message(models.Model):

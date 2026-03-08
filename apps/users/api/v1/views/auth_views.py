@@ -5,7 +5,9 @@ from apps.users.services.auth_service import AuthService
 from apps.users.api.v1.serializers.serializers import (
     UserRegistrationSerializer,
     EmailOtpVerificationSerializer,
-    UserLoginSerializer,forgot_password_confirm_Serializer
+    ResendOtpSerializer,
+    UserLoginSerializer,
+    ForgotPasswordConfirmSerializer,
 )
 
 service = AuthService()
@@ -25,7 +27,7 @@ def verify_otp_view(request):
     return service.verify_otp(request)
 
 
-@extend_schema(request=EmailOtpVerificationSerializer)
+@extend_schema(request=ResendOtpSerializer)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def resend_otp_view(request):
@@ -51,7 +53,7 @@ def logout_view(request):
 def token_refresh_view(request):
     return service.refresh(request)
  
-@extend_schema(request=forgot_password_confirm_Serializer)
+@extend_schema(request=ForgotPasswordConfirmSerializer)
 @api_view(['PATCH'])
 @permission_classes([AllowAny])
 def reset_password_view(request):

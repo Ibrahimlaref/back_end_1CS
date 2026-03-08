@@ -9,14 +9,14 @@ class MemberProfile(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     gym = models.ForeignKey(
-        "membersandsubscriptions.Gym",
+        "membersNsubscription.Gym",
         on_delete=models.CASCADE,
         related_name="member_profiles",
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="member_profiles",
+        related_name="members_member_profiles",
     )
 
     # Health fields — all optional on join, updateable via US-027

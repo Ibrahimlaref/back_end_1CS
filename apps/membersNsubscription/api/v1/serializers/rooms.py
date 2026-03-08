@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.membersNsubscription.models.room  import Room
+from apps.membersNsubscription.models import Room
 
 
 class RoomSerializer(serializers.ModelSerializer):

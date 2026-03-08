@@ -12,8 +12,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env = environ.Env()
 environ.Env.read_env(BASE_DIR / '.env')
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -43,6 +41,7 @@ INSTALLED_APPS = [
     'apps.core',
     'apps.users',
     'apps.notifications',
+    'apps.membersNsubscription',
 ]
 
 MIDDLEWARE = [
@@ -82,7 +81,10 @@ WSGI_APPLICATION = 'brahim.wsgi.application'
 
 # ─── DATABASE ─────────────────────────────────────────────────────────────────
 DATABASES = {
-    'default': env.db('DATABASE_URL')
+    'default': env.db(
+        'DATABASE_URL',
+        default='postgres://fittech:fittech@localhost:5432/fittech_dev',
+    ),
 }
 DATABASES['default']['CONN_MAX_AGE'] = env.int('DB_CONN_MAX_AGE', default=60)
 
@@ -129,7 +131,7 @@ CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
 
 # ─── REDIS ────────────────────────────────────────────────────────────────────
-REDIS_URL = env('REDIS_URL', default='redis://redis:6379/0')
+REDIS_URL = env('REDIS_URL', default='redis://localhost:6379/0')
 # Observability
 REQUEST_LOGGING_ENABLED = env.bool('REQUEST_LOGGING_ENABLED', default=True)
 REQUEST_LOG_SUCCESS_SAMPLE_RATE = env.float('REQUEST_LOG_SUCCESS_SAMPLE_RATE', default=0.10)
@@ -154,9 +156,9 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 # Queue routing
 CELERY_TASK_ROUTES = {
     'apps.notifications.tasks.*': {'queue': 'notifications'},
-    'apps.payments.tasks.*':      {'queue': 'payments'},
-    'apps.analytics.tasks.*':     {'queue': 'analytics'},
-    'apps.subscriptions.tasks.*': {'queue': 'scheduled'},
+    'apps.users.tasks.send_email_task': {'queue': 'notifications'},
+    'apps.users.tasks.cleanup_session_logs': {'queue': 'scheduled'},
+    'apps.gyms.tasks.dispatch_welcome_email': {'queue': 'notifications'},
 }
 
 # Retry policy
@@ -165,61 +167,28 @@ CELERY_TASK_DEFAULT_RETRY_DELAY = 60
 
 # ─── CELERY BEAT SCHEDULE ─────────────────────────────────────────────────────
 CELERY_BEAT_SCHEDULE = {
-    # Expire subscriptions — every hour
-    'expire_subscriptions': {
-        'task': 'apps.subscriptions.tasks.expire_subscriptions',
-        'schedule': crontab(minute=0),
-    },
-    # Resume paused memberships whose pause period has ended — daily 00:00
-    'auto_resume_expired_pauses': {
-        'task': 'apps.subscriptions.tasks.auto_resume_expired_pauses',
-        'schedule': crontab(hour=0, minute=0),
-    },
-    # Lift expired suspensions — daily 01:00
-    'lift_expired_suspensions': {
-        'task': 'apps.subscriptions.tasks.lift_expired_suspensions',
-        'schedule': crontab(hour=1, minute=0),
-    },
-    # Generate next week's course schedule — Sunday 23:00
-    'generate_weekly_courses': {
-        'task': 'apps.courses.tasks.generate_weekly_courses',
-        'schedule': crontab(hour=23, minute=0, day_of_week=0),
-    },
-    # Recalculate member behavior scores — nightly 02:00
-    'refresh_behavior_scores': {
-        'task': 'apps.analytics.tasks.refresh_behavior_scores',
-        'schedule': crontab(hour=2, minute=0),
-    },
-    # Recalculate retention risk signals — nightly 03:00
-    'refresh_retention_signals': {
-        'task': 'apps.analytics.tasks.refresh_retention_signals',
-        'schedule': crontab(hour=3, minute=0),
-    },
-    # Recalculate retention risk signals — nightly 03:00
-    'refresh_retention_signals': {
-        'task': 'brahim.celery.calculate_churn_scores',
-        'schedule': crontab(hour=3, minute=0),
-    },
-    'process-behavior-events-every-minute': {
-    'task': 'apps.membersNsubscription.services.MemberBehaviorEvent',
-    'schedule': crontab(minute='*'),   # every minute
+    # Weekly session log cleanup (also seeded via django-celery-beat migration)
+    'users.session-log-cleanup-weekly': {
+        'task': 'apps.users.tasks.cleanup_session_logs',
+        'schedule': crontab(minute=0, hour=3, day_of_week=0),
+        'options': {'queue': 'scheduled'},
     },
 }
 
 # ─── EMAIL ────────────────────────────────────────────────────────────────────
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_HOST = env('EMAIL_HOST', default='localhost')
 EMAIL_PORT = env.int('EMAIL_PORT', default=587)
-EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='ibrahimlaref23@gmail.com')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='ptuv mhqs iuot znhc')
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=False)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@fittech.com')
 
 # ─── ADMIN ────────────────────────────────────────────────────────────────────
-ADMIN_EMAIL = env('ADMIN_EMAIL', default='ibrahimlaref23@gmail.com')
+ADMIN_EMAIL = env('ADMIN_EMAIL', default='admin@fittech.com')
 
 # ─── FIREBASE ─────────────────────────────────────────────────────────────────
-FIREBASE_CREDENTIALS_PATH = env('FIREBASE_CREDENTIALS_PATH')
+FIREBASE_CREDENTIALS_PATH = env('FIREBASE_CREDENTIALS_PATH', default='')
 
 # ─── REST FRAMEWORK ───────────────────────────────────────────────────────────
 REST_FRAMEWORK = {
@@ -243,21 +212,6 @@ SPECTACULAR_SETTINGS = {
 }
 
 
-# ─── STATIC ───────────────────────────────────────────────────────────────────
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@fittech.com')
-
-
-
-
-EMAIL_HOST = env('EMAIL_HOST', default='localhost')
-EMAIL_PORT = env.int('EMAIL_PORT', default=587)
-EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=False)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

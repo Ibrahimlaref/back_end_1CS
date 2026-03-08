@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 
-class CoreConfig(AppConfig):
+
+class GymsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.core'
-    label = 'core'
+    name = 'apps.gyms'
+    label = 'gyms'

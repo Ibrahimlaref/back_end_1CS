@@ -11,7 +11,7 @@ from apps.users.api.v1.serializers.serializers import (
     EmailOtpVerificationSerializer,
     ResendOtpSerializer,
     UserLoginSerializer,
-    forgot_password_confirm_Serializer
+    ForgotPasswordConfirmSerializer,
 )
 from apps.users.services.jwt_service import (
     generate_tokens,
@@ -127,7 +127,13 @@ class AuthService:
             )
 
         email = serializer.validated_data['email']
-        user  = User.objects.get(email=email)
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'No account found with this email.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         self._send_otp(user, purpose=self.REGISTRATION_PURPOSE)
 
@@ -340,7 +346,7 @@ class AuthService:
         # 1. Verifying the OTP for password reset
         # 2. Allowing the user to set a new password
         # 3. Revoking all existing sessions after password change
-        serializer = forgot_password_confirm_Serializer(data=request.data)
+        serializer = ForgotPasswordConfirmSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(
                 {'errors': serializer.errors},

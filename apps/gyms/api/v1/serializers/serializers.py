@@ -1,6 +1,6 @@
 import re
 from rest_framework import serializers
-from gyms.models.gym import Gym, PlatformOwnership, AuditLog, AccessLog, ErrorLog
+from apps.core.models.gym import Gym, PlatformOwnership, AuditLog, AccessLog, ErrorLog
 
 
 # ────────────────────────────────────────────────

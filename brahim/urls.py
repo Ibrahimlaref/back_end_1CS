@@ -1,9 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
+from django.apps import apps as django_apps
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
-
-
 def health(request):
     from django.db import connection
     import redis
@@ -35,4 +34,9 @@ urlpatterns = [
     path('api/schema/',   SpectacularAPIView.as_view(),        name='schema'),
     path('api/redoc/',    SpectacularRedocView.as_view(),       name='redoc'),
     path('api/swagger/',  SpectacularSwaggerView.as_view(),     name='swagger'),
+    path('api/membersNsubscription/', include('apps.membersNsubscription.urls'))
 ]
+
+"""if django_apps.is_installed("apps.membersNsubscription"):
+    urlpatterns.append(path('api/members/', include('apps.membersNsubscription.urls')))
+"""

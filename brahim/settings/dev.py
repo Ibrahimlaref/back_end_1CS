@@ -29,15 +29,15 @@ LOGGING = {
         'handlers': ['console'],
         'level': 'INFO',
     },
-    'loggers': {
-        'django.db.backends': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
+    "loggers": {
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": "WARNING",   # change from DEBUG
         },
-        'observability.request': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
+        "observability.request": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
         },
     },
 }
