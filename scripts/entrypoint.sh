@@ -4,8 +4,10 @@ set -e
 echo "Waiting for database..."
 python manage.py wait_for_db
 
-echo "Running migrations..."
-python manage.py migrate
+if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+    echo "Running migrations..."
+    python manage.py migrate
+fi
 
 if [ "${COLLECT_STATIC:-false}" = "true" ]; then
     echo "Collecting static files..."

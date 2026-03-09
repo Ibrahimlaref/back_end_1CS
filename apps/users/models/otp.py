@@ -5,12 +5,15 @@ from datetime import timedelta
 
 
 class EmailOtpVerification(models.Model):
-    user       = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='email_otp_verifications')
-    otp        = models.CharField(max_length=6)
-    purpose    = models.CharField(max_length=50)  # 'registration', 'password_reset', 'email_change'
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='otps')
+    otp = models.CharField(max_length=6)
+    purpose = models.CharField(max_length=50)  # 'registration', 'password_reset', 'email_change'
     expires_at = models.DateTimeField()
-    is_used    = models.BooleanField(default=False)
+    is_used = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     @property
     def is_expired(self):

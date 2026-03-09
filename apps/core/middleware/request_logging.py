@@ -106,7 +106,7 @@ class RequestLoggingMiddleware:
                 )
 
             if response is not None:
-                response["X-Request-Id"] = request_id
+                response["X-Request-ID"] = request_id
 
     @staticmethod
     def _should_observe_request(request):
@@ -116,7 +116,12 @@ class RequestLoggingMiddleware:
 
     @staticmethod
     def _request_id_from_headers(request):
-        return request.META.get("HTTP_X_REQUEST_ID") or str(uuid.uuid4())
+        return (
+            getattr(request, "correlation_id", None)
+            or getattr(request, "request_id", None)
+            or request.META.get("HTTP_X_REQUEST_ID")
+            or str(uuid.uuid4())
+        )
 
     @staticmethod
     def _resolve_path(request):

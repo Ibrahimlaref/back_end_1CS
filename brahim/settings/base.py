@@ -4,6 +4,7 @@ Django settings for brahim project.
 
 from pathlib import Path
 from celery.schedules import crontab
+import importlib.util
 import environ
 
 
@@ -44,11 +45,15 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.notifications',
 ]
+if importlib.util.find_spec('django_prometheus') is not None:
+    INSTALLED_APPS.insert(0, 'django_prometheus')
 
 MIDDLEWARE = [
+    'apps.core.middleware.metrics.PrometheusBeforeMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'apps.core.middleware.correlation.CorrelationIdMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -57,7 +62,8 @@ MIDDLEWARE = [
     'apps.core.middleware.request_logging.RequestLoggingMiddleware',
     # US-001 — added after core app is created
     'apps.core.middleware.jwt_auth.JWTAuthMiddleware',
-    'apps.core.middleware.tenant.TenantMiddleware',
+    'apps.core.middleware.tenant.TenantContextMiddleware',
+    'apps.core.middleware.metrics.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = 'brahim.urls'
@@ -130,6 +136,22 @@ CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
 
 # ─── REDIS ────────────────────────────────────────────────────────────────────
 REDIS_URL = env('REDIS_URL', default='redis://redis:6379/0')
+_redis_cache_backend = 'django_redis.cache.RedisCache'
+_redis_cache_options = {'CLIENT_CLASS': 'django_redis.client.DefaultClient'}
+if importlib.util.find_spec('django_redis') is None:
+    _redis_cache_backend = 'django.core.cache.backends.redis.RedisCache'
+    _redis_cache_options = {}
+
+CACHES = {
+    'default': {
+        'BACKEND': _redis_cache_backend,
+        'LOCATION': env('REDIS_URL', default='redis://redis:6379/1'),
+        'OPTIONS': _redis_cache_options,
+    }
+}
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
+
 # Observability
 REQUEST_LOGGING_ENABLED = env.bool('REQUEST_LOGGING_ENABLED', default=True)
 REQUEST_LOG_SUCCESS_SAMPLE_RATE = env.float('REQUEST_LOG_SUCCESS_SAMPLE_RATE', default=0.10)
@@ -163,6 +185,12 @@ CELERY_TASK_ROUTES = {
 CELERY_TASK_MAX_RETRIES = 3
 CELERY_TASK_DEFAULT_RETRY_DELAY = 60
 
+# Notifications
+NOTIFICATIONS_RETRY_DELAY_SECONDS = env.int('NOTIFICATIONS_RETRY_DELAY_SECONDS', default=300)
+NOTIFICATIONS_RETRY_LOOKBACK_MINUTES = env.int('NOTIFICATIONS_RETRY_LOOKBACK_MINUTES', default=10)
+
+# Data Retention
+
 # ─── CELERY BEAT SCHEDULE ─────────────────────────────────────────────────────
 CELERY_BEAT_SCHEDULE = {
     # Expire subscriptions — every hour
@@ -194,6 +222,10 @@ CELERY_BEAT_SCHEDULE = {
     'refresh_retention_signals': {
         'task': 'apps.analytics.tasks.refresh_retention_signals',
         'schedule': crontab(hour=3, minute=0),
+    },
+    'monthly-data-retention': {
+        'task': 'apps.core.tasks.run_data_retention_policy',
+        'schedule': crontab(day_of_month='1', hour='2', minute='0'),
     },
 }
 
@@ -249,21 +281,43 @@ EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=False)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+_json_formatter_class = (
+    'pythonjsonlogger.jsonlogger.JsonFormatter'
+    if importlib.util.find_spec('pythonjsonlogger') is not None
+    else 'logging.Formatter'
+)
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'correlation': {
+            '()': 'apps.core.middleware.log_filter.CorrelationIdFilter',
+        },
+    },
     'formatters': {
-        'plain': {
-            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        'json': {
+            '()': _json_formatter_class,
+            'format': '%(asctime)s %(name)s %(levelname)s %(message)s %(correlation_id)s %(gym_id)s',
         },
     },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'plain',
+            'formatter': 'json',
+            'filters': ['correlation'],
         },
     },
     'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'celery': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'observability.request': {
             'handlers': ['console'],
             'level': 'INFO',
@@ -279,16 +333,24 @@ LOGGING = {
 if SENTRY_DSN:
     try:
         import sentry_sdk
+        from apps.core.middleware.correlation import get_gym_id
+        from sentry_sdk.integrations.celery import CeleryIntegration
         from sentry_sdk.integrations.django import DjangoIntegration
+    except ImportError:
+        pass
+    else:
+        def _before_send(event, hint):
+            tags = event.setdefault('tags', {})
+            tags['gym_id'] = get_gym_id() or 'unknown'
+            return event
 
         sentry_sdk.init(
             dsn=SENTRY_DSN,
-            integrations=[DjangoIntegration()],
+            integrations=[DjangoIntegration(), CeleryIntegration()],
             traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
             send_default_pii=False,
+            before_send=_before_send,
         )
-    except ImportError:
-        pass
 
 
 

@@ -2,13 +2,17 @@ import jwt
 from django.conf import settings
 from django.http import JsonResponse
 
+from apps.core.middleware.correlation import set_gym_id
+
 EXEMPT_PATHS = (
     '/api/users/v1/auth/register/',
     '/api/users/v1/auth/verify-otp/',
     '/api/users/v1/auth/resend-otp/',
     '/api/users/v1/auth/login/',
     '/api/users/v1/auth/refresh/',
+    '/api/v1/notifications/webhooks/email/',
     '/health',
+    '/metrics',
     '/admin/',
     '/api/schema/',
     '/api/redoc/',
@@ -45,5 +49,6 @@ class JWTAuthMiddleware:
         request.gym_id  = payload.get('gym_id')
         request.role    = payload.get('role')
         request.jti     = payload.get('jwt_jti')
+        set_gym_id(request.gym_id)
 
         return self.get_response(request)

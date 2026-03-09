@@ -56,6 +56,8 @@ class AuditLog(models.Model):
         LOGIN = "LOGIN", "Login"
         LOGOUT = "LOGOUT", "Logout"
 
+    retention_exempt = True
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     gym = models.ForeignKey(
         Gym,
@@ -71,17 +73,40 @@ class AuditLog(models.Model):
         on_delete=models.SET_NULL,
         related_name="audit_actions",
     )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="compliance_audit_logs",
+    )
     target_id = models.UUIDField(null=True, blank=True)
     target_table = models.TextField(blank=True)
     action = models.CharField(max_length=10, choices=Action.choices)
+    data = models.JSONField(null=True, blank=True)
     old_values = models.JSONField(null=True, blank=True)
     new_values = models.JSONField(null=True, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "audit_logs"
+
+    def save(self, *args, **kwargs):
+        if self.user_id is None and self.actor_id is not None:
+            self.user_id = self.actor_id
+        if self.data is None:
+            self.data = {
+                "target_id": str(self.target_id) if self.target_id else None,
+                "target_table": self.target_table,
+                "old_values": self.old_values,
+                "new_values": self.new_values,
+                "ip_address": self.ip_address,
+                "user_agent": self.user_agent,
+            }
+        super().save(*args, **kwargs)
 
 
 class AccessLog(models.Model):
@@ -98,12 +123,17 @@ class AccessLog(models.Model):
     gym = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name="access_logs")
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
         related_name="access_logs",
     )
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    path = models.CharField(max_length=255, blank=True)
     entry_type = models.CharField(max_length=10, choices=EntryType.choices)
     method = models.CharField(max_length=10, choices=Method.choices)
     device_id = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
     accessed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -126,11 +156,21 @@ class ErrorLog(models.Model):
         on_delete=models.SET_NULL,
         related_name="error_logs",
     )
+    level = models.CharField(max_length=16, default="ERROR", db_index=True)
     error_code = models.TextField(blank=True)
     message = models.TextField()
+    traceback = models.TextField(blank=True)
     stack_trace = models.TextField(blank=True)
     endpoint = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "error_logs"
+
+    def save(self, *args, **kwargs):
+        if not self.traceback and self.stack_trace:
+            self.traceback = self.stack_trace
+        if not self.stack_trace and self.traceback:
+            self.stack_trace = self.traceback
+        super().save(*args, **kwargs)

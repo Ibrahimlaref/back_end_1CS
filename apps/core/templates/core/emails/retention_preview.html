@@ -1,0 +1,11 @@
+<html>
+  <body>
+    <h1>Scheduled Data Retention Preview</h1>
+    <p>The monthly retention policy is scheduled at {{ preview.scheduled_at }}.</p>
+    <ul>
+      <li>Users to anonymise: {{ preview.users_to_anonymise }}</li>
+      <li>Access logs to delete: {{ preview.access_logs_to_delete }}</li>
+      <li>Error logs to delete: {{ preview.error_logs_to_delete }}</li>
+    </ul>
+  </body>
+</html>
