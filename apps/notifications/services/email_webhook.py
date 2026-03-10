@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 from typing import Any
+from typing import cast
 
 from apps.notifications.models import NotificationLog
 from apps.notifications.services.retry import merge_notification_payload, schedule_failed_notification_retry
 
 EVENT_STATUS_MAP = {
-    "bounce": NotificationLog.Status.FAILED,
-    "bounced": NotificationLog.Status.FAILED,
-    "delivered": NotificationLog.Status.DELIVERED,
-    "failed": NotificationLog.Status.FAILED,
-    "open": NotificationLog.Status.OPENED,
-    "opened": NotificationLog.Status.OPENED,
+    "bounce": cast(str, NotificationLog.Status.FAILED),
+    "bounced": cast(str, NotificationLog.Status.FAILED),
+    "delivered": cast(str, NotificationLog.Status.DELIVERED),
+    "failed": cast(str, NotificationLog.Status.FAILED),
+    "open": cast(str, NotificationLog.Status.OPENED),
+    "opened": cast(str, NotificationLog.Status.OPENED),
 }
 
 

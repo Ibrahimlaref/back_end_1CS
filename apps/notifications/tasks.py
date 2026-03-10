@@ -1,5 +1,6 @@
 from datetime import timedelta
 from smtplib import SMTPRecipientsRefused
+from typing import Any, cast
 
 from celery import shared_task
 from django.conf import settings
@@ -29,7 +30,13 @@ except ImportError:  # pragma: no cover - optional dependency in local/test envi
 
 User = get_user_model()
 
-def _ensure_firebase_initialized():
+EMAIL_CHANNEL = cast(str, NotificationLog.Channel.EMAIL)
+PUSH_CHANNEL = cast(str, NotificationLog.Channel.PUSH)
+SENT_STATUS = cast(str, NotificationLog.Status.SENT)
+FAILED_STATUS = cast(str, NotificationLog.Status.FAILED)
+
+
+def _ensure_firebase_initialized() -> None:
     if firebase_admin is None or credentials is None:
         raise RuntimeError("firebase_admin is not installed.")
 
@@ -44,7 +51,12 @@ def _ensure_firebase_initialized():
     firebase_admin.initialize_app(cred)
 
 
-def _update_log(notification_id: str, channel: str, status: str, raw_payload: dict | None = None):
+def _update_log(
+    notification_id: str,
+    channel: str,
+    status: str,
+    raw_payload: dict[str, Any] | None = None,
+):
     log = (
         NotificationLog.objects.filter(notification_id=notification_id, channel=channel)
         .order_by("-timestamp")
@@ -121,14 +133,14 @@ def send_email_notification(self, notification_id: str, user_id: str):
 
             _update_log(
                 notification_id=notification_id,
-                channel=NotificationLog.Channel.EMAIL,
-                status=NotificationLog.Status.SENT,
+                channel=EMAIL_CHANNEL,
+                status=SENT_STATUS,
             )
         except Exception as exc:
             log = _update_log(
                 notification_id=notification_id,
-                channel=NotificationLog.Channel.EMAIL,
-                status=NotificationLog.Status.FAILED,
+                channel=EMAIL_CHANNEL,
+                status=FAILED_STATUS,
                 raw_payload={"error": str(exc)},
             )
             if log is not None:
@@ -175,7 +187,7 @@ def send_push_notification(self, notification_id: str, user_id: str):
         except Exception as exc:
             if NotificationLog.objects.filter(
                 notification_id=notification_id,
-                channel=NotificationLog.Channel.PUSH,
+                channel=PUSH_CHANNEL,
             ).exists():
                 process_push_receipt(
                     notification_id=notification_id,
@@ -202,3 +214,27 @@ def send_admin_failure_alert(task_name: str, error: str):
             "recipient": settings.ADMIN_EMAIL,
         },
     )
+
+
+@shared_task(base=CorrelatedTask, queue="notifications")
+def retry_failed_notifications() -> int:
+    scheduled_count = 0
+    failed_logs = (
+        NotificationLog.objects.filter(channel=EMAIL_CHANNEL, status=FAILED_STATUS)
+        .select_related("notification")
+        .order_by("timestamp")
+    )
+
+    for log in failed_logs:
+        if retry_already_enqueued(log.raw_payload):
+            continue
+
+        send_email_notification.apply_async(
+            args=[str(log.notification_id), str(log.notification.user_id)],
+            countdown=int(timedelta(minutes=5).total_seconds()),
+        )
+        log.raw_payload = merge_notification_payload(log.raw_payload, {"_retry_enqueued": True})
+        log.save(update_fields=["raw_payload"])
+        scheduled_count += 1
+
+    return scheduled_count

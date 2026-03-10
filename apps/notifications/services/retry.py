@@ -20,7 +20,7 @@ def retry_already_enqueued(raw_payload: Any) -> bool:
     return isinstance(raw_payload, dict) and bool(raw_payload.get("_retry_enqueued"))
 
 
-def schedule_failed_notification_retry(log) -> None:
+def schedule_failed_notification_retry(log: Any) -> None:
     if retry_already_enqueued(log.raw_payload):
         return
 

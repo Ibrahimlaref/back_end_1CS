@@ -1,16 +1,17 @@
-from django.contrib.auth import get_user_model
+from typing import TYPE_CHECKING, cast
 
 from apps.core.tasks import apply_async_with_correlation
 from apps.notifications.models import Notification, NotificationLog, NotificationPreference
 
-User = get_user_model()
+if TYPE_CHECKING:
+    from apps.users.models.user import User
 
 
 class NotificationDispatcher:
     """Create notifications, honor channel preferences, and enqueue delivery tasks."""
 
     @staticmethod
-    def dispatch(gym, user: User, notif_type: str, channels: list[str], title: str, message: str):
+    def dispatch(gym, user: "User", notif_type: str, channels: list[str], title: str, message: str) -> None:
         notif = Notification.objects.create(
             gym=gym,
             user=user,
@@ -35,17 +36,17 @@ class NotificationDispatcher:
             )
 
             if not enabled:
-                log.status = NotificationLog.Status.FAILED
+                log.status = cast(str, NotificationLog.Status.FAILED)
                 log.raw_payload = {"reason": "channel_disabled"}
                 log.save(update_fields=["status", "raw_payload"])
                 continue
 
-            if channel == NotificationLog.Channel.IN_APP:
-                log.status = NotificationLog.Status.SENT
+            if channel == cast(str, NotificationLog.Channel.IN_APP):
+                log.status = cast(str, NotificationLog.Status.SENT)
                 log.save(update_fields=["status"])
                 continue
 
-            if channel == NotificationLog.Channel.EMAIL:
+            if channel == cast(str, NotificationLog.Channel.EMAIL):
                 from apps.notifications import tasks
 
                 apply_async_with_correlation(
@@ -54,7 +55,7 @@ class NotificationDispatcher:
                 )
                 continue
 
-            if channel == NotificationLog.Channel.PUSH:
+            if channel == cast(str, NotificationLog.Channel.PUSH):
                 from apps.notifications import tasks
 
                 apply_async_with_correlation(
@@ -63,6 +64,6 @@ class NotificationDispatcher:
                 )
                 continue
 
-            log.status = NotificationLog.Status.FAILED
+            log.status = cast(str, NotificationLog.Status.FAILED)
             log.raw_payload = {"reason": f"channel_not_implemented:{channel}"}
             log.save(update_fields=["status", "raw_payload"])
