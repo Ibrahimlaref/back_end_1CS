@@ -182,7 +182,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="errorlog",
             name="traceback",
-            field=models.TextField(blank=True),
+            field=models.TextField(blank=True, default=""),
         ),
         migrations.AddField(
             model_name="systemlog",
@@ -210,7 +210,10 @@ class Migration(migrations.Migration):
                 to=settings.AUTH_USER_MODEL,
             ),
         ),
-        migrations.RunPython(populate_retention_fields, rollback_retention_fields),
+        migrations.RunPython(
+            populate_retention_fields,
+            reverse_code=rollback_retention_fields,
+        ),
         migrations.AlterField(
             model_name="auditlog",
             name="timestamp",
