@@ -1,5 +1,5 @@
 from django.urls import path
-from core.api.v1.views.gym_views import GymProvisionView
+from apps.gyms.api.v1.views.gym_views import GymProvisionView
 
 urlpatterns = [
     # US-002: Gym Tenant Provisioning

@@ -11,6 +11,7 @@ EXEMPT_PATHS = (
     '/api/users/v1/auth/login/',
     '/api/users/v1/auth/refresh/',
     '/api/v1/notifications/webhooks/email/',
+    '/api/users/v1/auth/reset-password/',
     '/health',
     '/metrics',
     '/admin/',

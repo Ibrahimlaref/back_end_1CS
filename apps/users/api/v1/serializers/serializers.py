@@ -179,13 +179,13 @@ class PasswordChangeSerializer(serializers.Serializer):
             raise serializers.ValidationError("Current password is incorrect.")
         return value
 
-class forgot_password_confirm_Serializer(serializers.Serializer):
+class ForgotPasswordConfirmSerializer(serializers.Serializer):
     email = serializers.EmailField()
     new_password = serializers.CharField(min_length=8, write_only=True)
     new_password_confirm = serializers.CharField(write_only=True)
-    otp= serializers.CharField(min_length=6, max_length=6)
+    otp = serializers.CharField(min_length=6, max_length=6)
 
-    def validate_password(self, value):
+    def validate_new_password(self, value):
         validate_password(value)
         return value
 

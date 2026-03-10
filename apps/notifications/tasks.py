@@ -29,7 +29,6 @@ except ImportError:  # pragma: no cover - optional dependency in local/test envi
 
 User = get_user_model()
 
-
 def _ensure_firebase_initialized():
     if firebase_admin is None or credentials is None:
         raise RuntimeError("firebase_admin is not installed.")
@@ -37,7 +36,11 @@ def _ensure_firebase_initialized():
     if firebase_admin._apps:
         return
 
-    cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
+    credentials_path = getattr(settings, "FIREBASE_CREDENTIALS_PATH", "")
+    if not credentials_path:
+        raise RuntimeError("FIREBASE_CREDENTIALS_PATH is not configured")
+
+    cred = credentials.Certificate(credentials_path)
     firebase_admin.initialize_app(cred)
 
 
@@ -185,7 +188,6 @@ def send_push_notification(self, notification_id: str, user_id: str):
 
 @shared_task(base=CorrelatedTask, queue="notifications")
 def send_admin_failure_alert(task_name: str, error: str):
-    """Send a failure alert email to the admin when a task fails consecutively."""
     apply_async_with_correlation(
         send_email,
         kwargs={
@@ -200,58 +202,3 @@ def send_admin_failure_alert(task_name: str, error: str):
             "recipient": settings.ADMIN_EMAIL,
         },
     )
-
-
-@shared_task(
-    bind=True,
-    base=CorrelatedTask,
-    queue="notifications",
-    name="apps.notifications.tasks.retry_failed_notifications",
-)
-def retry_failed_notifications(self):
-    cutoff = timezone.now() - timedelta(minutes=settings.NOTIFICATIONS_RETRY_LOOKBACK_MINUTES)
-    failed_logs = (
-        NotificationLog.objects.select_related("notification")
-        .filter(
-            status=NotificationLog.Status.FAILED,
-            timestamp__gte=cutoff,
-        )
-        .order_by("timestamp")
-    )
-
-    scheduled_count = 0
-    for log in failed_logs.iterator():
-        if retry_already_enqueued(log.raw_payload):
-            continue
-
-        enqueued = False
-        if log.channel == NotificationLog.Channel.EMAIL:
-            apply_async_with_correlation(
-                send_email_notification,
-                args=[str(log.notification_id), str(log.notification.user_id)],
-                countdown=settings.NOTIFICATIONS_RETRY_DELAY_SECONDS,
-            )
-            enqueued = True
-        elif log.channel == NotificationLog.Channel.PUSH:
-            apply_async_with_correlation(
-                send_push_notification,
-                args=[str(log.notification_id), str(log.notification.user_id)],
-                countdown=settings.NOTIFICATIONS_RETRY_DELAY_SECONDS,
-            )
-            enqueued = True
-
-        retry_metadata = {
-            "_retry_enqueued": enqueued,
-            "_retry_enqueued_at": timezone.now().isoformat(),
-            "_retry_countdown_seconds": settings.NOTIFICATIONS_RETRY_DELAY_SECONDS,
-        }
-        if not enqueued:
-            retry_metadata["_retry_skipped"] = f"unsupported_channel:{log.channel}"
-
-        log.raw_payload = merge_notification_payload(log.raw_payload, retry_metadata)
-        log.save(update_fields=["raw_payload"])
-
-        if enqueued:
-            scheduled_count += 1
-
-    return scheduled_count

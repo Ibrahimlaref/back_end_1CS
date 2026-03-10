@@ -3,8 +3,8 @@ from django.db import transaction
 from django.db import connection
 
 from apps.core.tasks import apply_async_with_correlation
-from gyms.models.gym import Gym, PlatformOwnership, AuditLog
-from gyms.tasks import dispatch_welcome_email
+from apps.core.models.gym import Gym, PlatformOwnership, AuditLog
+from apps.gyms.tasks import dispatch_welcome_email
 
 logger = logging.getLogger(__name__)
 
