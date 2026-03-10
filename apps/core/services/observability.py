@@ -30,4 +30,3 @@ def emit_latency_alert(payload):
 
 def emit_internal_error(payload):
     emit_structured_event("observability_error", payload, level=logging.ERROR)
-

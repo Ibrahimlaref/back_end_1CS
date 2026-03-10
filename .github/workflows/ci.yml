@@ -75,12 +75,13 @@ jobs:
             --version-label="pr-${{ github.event.number }}"
 
       - name: Check migration backward compatibility
+        env:
+          LOG_SQL_QUERIES: "0"
         run: |
-          if python manage.py help lintmigrations --settings=brahim.settings.dev > /dev/null 2>&1; then
-            python manage.py lintmigrations --settings=brahim.settings.dev --warnings-as-errors
-          else
-            lintmigrations --settings=brahim.settings.dev --warnings-as-errors
-          fi
+          python scripts/lint_new_migrations.py \
+            --base-ref "${{ github.base_ref }}" \
+            --settings brahim.settings.dev \
+            --warnings-as-errors
 
       - name: Enforce migration governance
         run: python scripts/check_migration_governance.py --base-ref "${{ github.base_ref }}"

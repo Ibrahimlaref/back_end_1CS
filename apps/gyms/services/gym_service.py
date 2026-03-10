@@ -2,6 +2,7 @@ import logging
 from django.db import transaction
 from django.db import connection
 
+from apps.core.tasks import apply_async_with_correlation
 from apps.core.models.gym import Gym, PlatformOwnership, AuditLog
 from apps.gyms.tasks import dispatch_welcome_email
 
@@ -116,11 +117,14 @@ def provision_gym(
         # on_commit ensures the task fires ONLY after the transaction
         # commits successfully — never on rollback.
         transaction.on_commit(
-            lambda: dispatch_welcome_email.delay(
-                gym_id=str(gym.id),
-                owner_email=owner_user.email,
-                owner_name=getattr(owner_user, "full_name", owner_user.email),
-                gym_name=gym.name,
+            lambda: apply_async_with_correlation(
+                dispatch_welcome_email,
+                kwargs={
+                    "gym_id": str(gym.id),
+                    "owner_email": owner_user.email,
+                    "owner_name": getattr(owner_user, "full_name", owner_user.email),
+                    "gym_name": gym.name,
+                },
             )
         )
 

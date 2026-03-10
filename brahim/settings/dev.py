@@ -16,28 +16,9 @@ else:
         'django_migration_linter',
     ]
 
-# Show all SQL queries in dev
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'root': {
+if env.bool("LOG_SQL_QUERIES", default=True):
+    LOGGING['loggers']['django.db.backends'] = {
         'handlers': ['console'],
-        'level': 'INFO',
-    },
-    "loggers": {
-        "django.db.backends": {
-            "handlers": ["console"],
-            "level": "WARNING",   # change from DEBUG
-        },
-        "observability.request": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-    },
-}
+        'level': 'DEBUG',
+        'propagate': False,
+    }

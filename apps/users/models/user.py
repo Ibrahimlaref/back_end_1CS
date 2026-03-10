@@ -26,19 +26,28 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
+    email.PII = True
     first_name = models.TextField(blank=True)
+    first_name.PII = True
     last_name = models.TextField(blank=True)
+    last_name.PII = True
     phone = models.TextField(blank=True)
+    phone.PII = True
     date_of_birth = models.DateField(null=True, blank=True)
+    date_of_birth.PII = True
     photo_url = models.TextField(blank=True)
+    photo_url.PII = True
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     email_verified = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    is_anonymised = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS: list[str] = []
 
     objects = UserManager()
 

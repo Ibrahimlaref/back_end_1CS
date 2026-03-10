@@ -3,12 +3,14 @@ from django.conf import settings
 from django.utils import timezone
 from celery import shared_task
 
+from apps.core.tasks import CorrelatedTask
 from apps.core.models import SystemLog
 from apps.users.services.session_cleanup_service import SessionCleanupService
 
 
 @shared_task(
     bind=True,
+    base=CorrelatedTask,
     max_retries=3,
     name='apps.users.tasks.send_email_task',
     queue='notifications',
@@ -29,6 +31,7 @@ def send_email_task(self, to_email, subject, message):
 
 @shared_task(
     bind=True,
+    base=CorrelatedTask,
     max_retries=3,
     name='apps.users.tasks.cleanup_session_logs',
     queue='scheduled',

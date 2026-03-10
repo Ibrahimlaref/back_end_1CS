@@ -3,11 +3,14 @@ from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
 
+from apps.core.tasks import CorrelatedTask
+
 logger = logging.getLogger(__name__)
 
 
 @shared_task(
     bind=True,
+    base=CorrelatedTask,
     max_retries=3,
     default_retry_delay=60,   # retry after 60s
     name="apps.gyms.tasks.dispatch_welcome_email",

@@ -20,6 +20,7 @@ from apps.users.services.jwt_service import (
     revoke_all_sessions,
     decode_refresh_token,
 )
+from apps.core.tasks import apply_async_with_correlation
 from apps.users.tasks import send_email_task
 
 
@@ -396,10 +397,13 @@ class AuthService:
         """Generate OTP, save to DB, send email via Celery."""
         otp_obj = EmailOtpVerification.generate(user, purpose=purpose)
 
-        send_email_task.delay(
-            to_email=user.email,
-            subject='Your verification code',
-            message=f'Your OTP is: {otp_obj.otp}\nExpires in 10 minutes.',
+        apply_async_with_correlation(
+            send_email_task,
+            kwargs={
+                'to_email': user.email,
+                'subject': 'Your verification code',
+                'message': f'Your OTP is: {otp_obj.otp}\nExpires in 10 minutes.',
+            },
         )
 
 

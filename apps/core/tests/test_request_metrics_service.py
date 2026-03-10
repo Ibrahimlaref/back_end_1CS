@@ -51,7 +51,7 @@ class FakeRedis:
 
     def ltrim(self, key, start, end):
         items = self.data.get(key, [])
-        self.data[key] = items[start : end + 1]
+        self.data[key] = items[start:end + 1]
         return True
 
     def expire(self, key, ttl):
@@ -62,7 +62,7 @@ class FakeRedis:
         values = self.data.get(key, [])
         if end == -1:
             return values[start:]
-        return values[start : end + 1]
+        return values[start:end + 1]
 
     def set(self, key, value, nx=False, ex=None):
         exists = key in self.data
@@ -110,4 +110,3 @@ class RequestMetricsServiceTests(SimpleTestCase):
         self.assertIsNone(result["p95_global_ms"])
         self.assertIsNone(result["p95_route_ms"])
         self.assertFalse(result["alert_triggered"])
-

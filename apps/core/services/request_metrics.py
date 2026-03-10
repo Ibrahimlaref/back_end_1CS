@@ -98,4 +98,3 @@ class RequestMetricsService:
         ordered = sorted(values)
         index = max(0, math.ceil(0.95 * len(ordered)) - 1)
         return round(float(ordered[index]), 2)
-

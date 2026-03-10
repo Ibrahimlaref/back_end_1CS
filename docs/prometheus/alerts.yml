@@ -1,0 +1,21 @@
+groups:
+  - name: fittech-api-observability
+    rules:
+      - alert: HighErrorRate
+        expr: (sum(rate(request_count_total{status=~"5.."}[5m])) / sum(rate(request_count_total[5m]))) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          receiver: pagerduty
+        annotations:
+          summary: High API error rate
+          description: "Error rate is {{ $value | humanizePercentage }} - investigate immediately."
+      - alert: HighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(request_latency_ms_bucket[5m])) by (le)) > 500
+        for: 5m
+        labels:
+          severity: critical
+          receiver: pagerduty
+        annotations:
+          summary: High p95 API latency
+          description: "P95 latency {{ $value }}ms exceeds 500ms SLO."

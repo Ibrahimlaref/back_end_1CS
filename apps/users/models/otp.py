@@ -9,7 +9,7 @@ class EmailOtpVerification(models.Model):
     otp        = models.CharField(max_length=6)
     purpose    = models.CharField(max_length=50)  # 'registration', 'password_reset', 'email_change'
     expires_at = models.DateTimeField()
-    is_used    = models.BooleanField(default=False)
+    is_used = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
