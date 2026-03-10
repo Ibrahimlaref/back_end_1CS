@@ -183,6 +183,7 @@ class Migration(migrations.Migration):
             model_name="errorlog",
             name="traceback",
             field=models.TextField(blank=True, default=""),
+            preserve_default=False,
         ),
         migrations.AddField(
             model_name="systemlog",
