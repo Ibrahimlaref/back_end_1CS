@@ -16,9 +16,9 @@ else:
         'django_migration_linter',
     ]
 
-# Show all SQL queries in dev
-LOGGING['loggers']['django.db.backends'] = {
-    'handlers': ['console'],
-    'level': 'DEBUG',
-    'propagate': False,
-}
+if env.bool("LOG_SQL_QUERIES", default=True):
+    LOGGING['loggers']['django.db.backends'] = {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+        'propagate': False,
+    }
