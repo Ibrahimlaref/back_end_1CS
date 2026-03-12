@@ -2,18 +2,17 @@ import jwt
 from django.conf import settings
 from django.http import JsonResponse
 
+from apps.users.models.user import User
+
 EXEMPT_PATHS = (
     '/api/users/v1/auth/register/',
     '/api/users/v1/auth/verify-otp/',
     '/api/users/v1/auth/resend-otp/',
     '/api/users/v1/auth/login/',
     '/api/users/v1/auth/refresh/',
-<<<<<<< HEAD
     '/api/users/v1/auth/reset-password/',
-=======
     '/api/users/v1/auth/2fa/verify/',
     '/api/users/v1/auth/2fa/recover/',
->>>>>>> 51dcb10 (feat:add 2 factor authentication)
     '/health',
     '/admin/',
     '/api/schema/',
@@ -47,7 +46,14 @@ class JWTAuthMiddleware:
         except jwt.InvalidTokenError:
             return JsonResponse({'error': 'Invalid token', 'code': 'invalid_token'}, status=401)
 
-        request.user_id = payload.get('user_id')
+        user_id = payload.get('user_id')
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'Invalid token', 'code': 'invalid_token'}, status=401)
+
+        request.user = user
+        request.user_id = str(user.id)
         request.gym_id  = payload.get('gym_id')
         request.role    = payload.get('role')
         request.jti     = payload.get('jwt_jti')

@@ -47,6 +47,8 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('core', '0002_initial'),
+        ('gyms', '0002_initial'),
+        ('membersNsubscription', '0001_initial'),
     ]
 
     operations = [

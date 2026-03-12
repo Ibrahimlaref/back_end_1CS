@@ -6,7 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.membersNsubscription.models import Gym, Equipment, MaintenanceReport
+from apps.gyms.models import Gym
+from apps.membersNsubscription.models import Equipment, MaintenanceReport
 from apps.membersNsubscription.api.v1.serializers.equipment import (
     EquipmentSerializer,
     EquipmentAdminSerializer,

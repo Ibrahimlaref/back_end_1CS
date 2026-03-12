@@ -179,7 +179,6 @@ class PasswordChangeSerializer(serializers.Serializer):
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError("Current password is incorrect.")
-<<<<<<< HEAD
         return value
 
 class ForgotPasswordConfirmSerializer(serializers.Serializer):
@@ -196,6 +195,3 @@ class ForgotPasswordConfirmSerializer(serializers.Serializer):
         if attrs['new_password'] != attrs['new_password_confirm']:
             raise serializers.ValidationError({'new_password_confirm': 'Passwords do not match.'})
         return attrs
-=======
-        return value
->>>>>>> e8e0f09 (feat:add 2 factor authentication)

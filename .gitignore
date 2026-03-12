@@ -27,3 +27,4 @@ pdfs/
 *docker-compose.postgres.yml
 
 .vscode/
+firebase_credentials.json

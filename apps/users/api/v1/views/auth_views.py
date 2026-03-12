@@ -8,7 +8,7 @@ from apps.users.api.v1.serializers.serializers import (
     ResendOtpSerializer,
     UserLoginSerializer,
     ForgotPasswordConfirmSerializer,
-    UserLoginSerializer,forgot_password_confirm_Serializer,
+    UserLoginSerializer,ForgotPasswordConfirmSerializer,
     UserLoginSerializer,
     TOTPVerifySerializer,
     TOTPSetupConfirmSerializer,

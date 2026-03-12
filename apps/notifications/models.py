@@ -3,7 +3,7 @@ from django.db import models
 from django.utils import timezone
 
 from apps.users.models.user import User
-from apps.core.models.gym import Gym
+from apps.gyms.models import Gym
 from django.contrib.postgres.fields import ArrayField
 
 # ─── NOTIFICATION TYPES & CHANNELS ───────────────────────────────────────────

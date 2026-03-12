@@ -12,14 +12,10 @@ from apps.users.api.v1.serializers.serializers import (
     EmailOtpVerificationSerializer,
     ResendOtpSerializer,
     UserLoginSerializer,
-<<<<<<< HEAD
     ForgotPasswordConfirmSerializer,
-=======
-    forgot_password_confirm_Serializer,
     TOTPVerifySerializer,
     TOTPSetupConfirmSerializer,
     TOTPRecoverSerializer,
->>>>>>> 51dcb10 (feat:add 2 factor authentication)
 )
 from apps.users.services.jwt_service import (
     generate_tokens,
@@ -38,6 +34,8 @@ from apps.users.services.totp_service import (
     disable_2fa,
 )
 from apps.users.tasks import send_email_task
+
+from apps.membersNsubscription.models import UserGymRole as MemberUserGymRole
 
 import redis
 from django.conf import settings as django_settings
@@ -125,7 +123,6 @@ class AuthService:
             return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         email = serializer.validated_data['email']
-<<<<<<< HEAD
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
@@ -134,9 +131,7 @@ class AuthService:
                 status=status.HTTP_404_NOT_FOUND
             )
 
-=======
         user  = User.objects.get(email=email)
->>>>>>> 51dcb10 (feat:add 2 factor authentication)
         self._send_otp(user, purpose=self.REGISTRATION_PURPOSE)
 
         return Response({'message': 'OTP resent. Check your email.'}, status=status.HTTP_200_OK)
@@ -378,12 +373,12 @@ class AuthService:
 
             revoke_session(jti)
 
-            role_obj = UserGymRole.objects.filter(user=user, status=UserGymRole.Status.ACTIVE).first()
-            if not role_obj:
+            gym_id, role = self._resolve_role(user)
+            if gym_id is None:
                 return Response({'error': 'No active gym membership found.'}, status=status.HTTP_403_FORBIDDEN)
 
-            tokens = generate_tokens(user, gym_id=role_obj.gym_id, role=role_obj.role)
-            create_session(user, role_obj.gym_id, jti=tokens['jti'], request=request)
+            tokens = generate_tokens(user, gym_id=gym_id, role=role)
+            create_session(user, gym_id, jti=tokens['jti'], request=request)
 
             response = Response({'message': 'Token refreshed.', 'access': tokens['access']}, status=status.HTTP_200_OK)
             response.set_cookie(
@@ -482,13 +477,17 @@ class AuthService:
             user=user, status=UserGymRole.Status.ACTIVE
         ).select_related('gym').first()
 
-<<<<<<< HEAD
-    
-=======
-        if not role_obj:
-            return None, 'onboarding'
+        if role_obj:
+            return str(role_obj.gym_id), role_obj.role
 
-        return str(role_obj.gym_id), role_obj.role
+        member_role = MemberUserGymRole.objects.filter(
+            user=user, status="active"
+        ).first()
+
+        if member_role:
+            return str(member_role.gym_id), member_role.role
+
+        return None, 'onboarding'
 
 
     def _issue_tokens(self, user, request, gym_id=None, role=None):
@@ -517,4 +516,3 @@ class AuthService:
             httponly=True, secure=True, samesite='Strict', max_age=60 * 60 * 24 * 7,
         )
         return response
->>>>>>> 51dcb10 (feat:add 2 factor authentication)

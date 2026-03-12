@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.contrib.postgres.fields import ArrayField
 from django.utils import timezone
 
-from apps.core.models.gym import Gym
+from apps.gyms.models import Gym
 
 
 # ─── PLATFORM LEVEL ───────────────────────────────────────────────────────────

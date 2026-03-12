@@ -7,9 +7,8 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    initial = True
-
     dependencies = [
+        ('gyms', '0001_initial'),
         ('core', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
@@ -33,22 +32,22 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='errorlog',
             name='gym',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='error_logs', to='core.gym'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='error_logs', to='gyms.Gym'),
         ),
         migrations.AddField(
             model_name='auditlog',
             name='gym',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='audit_logs', to='core.gym'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='audit_logs', to='gyms.Gym'),
         ),
         migrations.AddField(
             model_name='accesslog',
             name='gym',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='access_logs', to='core.gym'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='access_logs', to='gyms.Gym'),
         ),
         migrations.AddField(
             model_name='platformownership',
             name='gym',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='platform_ownerships', to='core.gym'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='platform_ownerships', to='gyms.Gym'),
         ),
         migrations.AddField(
             model_name='platformownership',

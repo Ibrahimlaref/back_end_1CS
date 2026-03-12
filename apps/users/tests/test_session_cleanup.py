@@ -8,7 +8,8 @@ from django.test import TestCase
 from django.utils import timezone
 from django_celery_beat.models import CrontabSchedule, PeriodicTask
 
-from apps.core.models import Gym, SystemLog
+from apps.gyms.models import Gym
+from apps.core.models import SystemLog
 from apps.users.models.user import SessionLog, User
 from apps.users.services.session_cleanup_service import SessionCleanupService
 from apps.users.tasks import cleanup_session_logs

@@ -1,5 +1,5 @@
 from django.utils import timezone
-from apps.core.models import AccessLog
+from apps.gyms.models import AccessLog
 from apps.membersNsubscription.models import (
     MemberRetentionSignal,
     Notification,

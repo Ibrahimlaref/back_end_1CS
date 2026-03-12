@@ -24,7 +24,8 @@ class Gym(models.Model):
     )
 
     class Meta:
-        db_table = "gyms"
+        app_label = 'gyms'
+        db_table = 'gyms'
 
     def __str__(self):
         return self.name
